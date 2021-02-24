@@ -1,6 +1,7 @@
 const router = require("express").Router()
 const UserSchema = require("./schema")
 const UserModel = require("mongoose").model("User", UserSchema)
+const { generateAccessToken } = require("../authTools")
 
 router.post("/register", async (req, res) => {
     try {
@@ -33,6 +34,7 @@ router.post("/login", async (req, res) => {
             : res.status(401).send({ message: "No username/password match" })
 
     } catch (error) {
+        console.log(error)
         res.status(400).send({
             message: error.message,
             errorCode: 'wrong_credentials'
