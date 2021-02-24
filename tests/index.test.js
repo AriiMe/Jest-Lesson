@@ -1,7 +1,7 @@
 const server = require("../src/server")
 const request = require("supertest")(server)
 const mongoose = require("mongoose")
-
+const { verifyAccess } = require("../src/services/authTools");
 const UserSchema = require("../src/services/users/schema")
 const UserModel = require("mongoose").model("User", UserSchema)
 
@@ -78,12 +78,15 @@ describe("Stage II: testing user creation and login", () => {
         expect(response.body.errorCode).toBe("wrong_credentials")
     })
 
-    it("should return a valid token when loggin in with correct credentials", async () => { // "VALID_TOKEN"
-        const response = await request.post("/users/login").send(validCredentials) // 
+    it("should return a valid token when loggin in with correct credentials", async () => {
+        // "VALID_TOKEN"
+        const response = await request.post("/users/login").send(validCredentials); //
 
-        const { token } = response.body
-        expect(token).toBe(validToken)
-    })
+        const { token } = response.body;
+        const verified = await verifyAccess(token);
+        expect(verified).toBe(validToken);
+    });
+
 
     it("should NOT return a valid token when loggin in with INCORRECT credentials", async () => {
         const response = await request.post("/users/login").send(invalidCredentials)
@@ -93,7 +96,12 @@ describe("Stage II: testing user creation and login", () => {
         const { token } = response.body
         expect(token).not.toBeDefined()
     })
-
+    it("should reject with a 401 error when logging in with INCORRECT credentials", async () => {
+        const response = await request
+            .post("/users/login")
+            .send(incorrectCredentials);
+        expect(response.status).toBe(401);
+    });
 })
 
 // III: Testing protected endpoints
